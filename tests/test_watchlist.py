@@ -52,6 +52,28 @@ def sample_film(app):
         return film.id
 
 
+# ── Deduplication (second test — my chosen edge case) ────────────────────────
+
+def test_add_to_watchlist_duplicate_raises(app, sample_user, sample_film):
+    """
+    Second test (edge case of my choosing): adding the same film twice
+    should raise AlreadyInWatchlistError and must not create a second row.
+    Chosen because deduplication is the behavior added in Comment 2, and a
+    silent duplicate would be the most damaging regression for the feature.
+    Mirrors test_add_to_collection_duplicate_raises.
+    """
+    with app.app_context():
+        add_to_watchlist(user_id=sample_user, film_id=sample_film)
+
+        with pytest.raises(AlreadyInWatchlistError):
+            add_to_watchlist(user_id=sample_user, film_id=sample_film)
+
+        count = WatchlistEntry.query.filter_by(
+            user_id=sample_user, film_id=sample_film
+        ).count()
+        assert count == 1
+
+
 # ── Nonexistent film ─────────────────────────────────────────────────────────
 
 def test_add_to_watchlist_nonexistent_film_raises(app, sample_user):
